@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "C:\\Users\\ten_a\\AppData\\Roaming\\npm\\pnpm.cmd",
+      "runtimeArgs": ["--filter", "@zeus/web", "dev"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "api",
+      "runtimeExecutable": "C:\\Users\\ten_a\\AppData\\Roaming\\npm\\pnpm.cmd",
+      "runtimeArgs": ["--filter", "@zeus/api", "dev"],
+      "port": 3001
+    }
+  ]
+}

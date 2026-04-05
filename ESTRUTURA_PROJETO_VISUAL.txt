@@ -1,0 +1,299 @@
+================================================================================
+                    ZEUS FINANCEIRO — ESTRUTURA DO PROJETO
+================================================================================
+
+VISÃO GERAL (Semana 2)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Semana 1 ✅ (Completa)
+├── Multi-tenancy + RLS
+├── Auth (Supabase)
+└── TenantProvider (Frontend)
+
+Semana 2 🚀 (SEU TRABALHO)
+├── Parser XML NFCe        ← NOVO
+├── Parser CSV Universal   ← NOVO
+└── Endpoints de Upload    ← EXPANDIR
+
+Semana 3+ (Próximo)
+├── Trigger.dev (background jobs)
+├── UI para upload
+└── Notificações
+
+
+ESTRUTURA DO PROJETO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+zeus-financeiro/
+│
+├── 📱 apps/
+│   │
+│   ├── api/  (Backend NestJS — localhost:3001)
+│   │   ├── src/
+│   │   │   ├── main.ts              ← Config do servidor
+│   │   │   ├── app.module.ts        ← Módulos
+│   │   │   │
+│   │   │   ├── 🎯 import/           ← ⭐ SEU FOCO
+│   │   │   │   ├── import.controller.ts      (Expandir com NFCe + CSV)
+│   │   │   │   ├── import.service.ts        (Existente)
+│   │   │   │   ├── import.module.ts         (Existente)
+│   │   │   │   │
+│   │   │   │   └── 📦 parsers/      (CRIAR NOVO)
+│   │   │   │       ├── nfce-parser.ts       ← NOVO (200 linhas)
+│   │   │   │       ├── csv-parser.ts        ← NOVO (200 linhas)
+│   │   │   │       └── index.ts             ← NOVO (exports)
+│   │   │   │
+│   │   │   ├── auth/                (Auth guards — já existe)
+│   │   │   ├── transactions/        (Onde insere dados — já existe)
+│   │   │   ├── supabase/            (Conexão BD — já existe)
+│   │   │   └── ...outros modules
+│   │   │
+│   │   ├── test/
+│   │   │   └── parsers/             (Testes — CRIAR)
+│   │   │       ├── nfce-parser.spec.ts
+│   │   │       └── csv-parser.spec.ts
+│   │   │
+│   │   ├── package.json             ← Adicionar xml2js
+│   │   └── tsconfig.json
+│   │
+│   └── web/  (Frontend Next.js — localhost:3000)
+│       ├── src/
+│       │   ├── app/                 (Páginas)
+│       │   └── lib/
+│       │       ├── context/         (TenantProvider — Semana 1)
+│       │       └── hooks/           (Custom hooks — Semana 1)
+│       │
+│       └── package.json
+│
+├── 📦 packages/
+│   ├── database/        (Types do Supabase gerados — não mexer)
+│   └── shared/          (Types compartilhadas)
+│
+├── 🗄️ supabase/
+│   ├── migrations/      (SQL scripts)
+│   │   └── 20250105000000_rls_policies.sql  (Semana 1)
+│   │
+│   ├── seed.sql         (Dados de teste)
+│   └── types/           (Auto-gerado)
+│
+└── 📚 Documentação
+    ├── QUICK_START_SEMANA2.md          ← COMECE AQUI (5 min)
+    ├── SEMANA2_PARSERS_IMPORTACAO.md   ← Tudo detalhado (30 min)
+    ├── PREPARACAO_SEMANA2.md           ← Checklist (10 min)
+    ├── RODAR_LOCALMENTE.md             ← Setup ambiente
+    ├── FASE1_SEMANA1_IMPLEMENTACAO.md  ← O que foi feito
+    └── ESTRUTURA_PROJETO_VISUAL.txt    ← Este arquivo
+
+
+FLUXO DE DADOS (Semana 2)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                          PARSER NFCe WORKFLOW                             ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+Usuário (PDV)
+    │
+    └─→ Emite NFC-e (XML) → arquivo.xml
+        │
+        └─→ Upload via: POST /import/upload-nfce
+            │
+            ├─→ Controller recebe arquivo
+            │   │
+            │   └─→ NFCeParser.parse(xmlBuffer)
+            │       │
+            │       ├─1. Converter XML → Objeto JS (xml2js)
+            │       ├─2. Extrair dados (chaveNFe, data, itens, valor)
+            │       ├─3. Validar (status = "autorizado"?)
+            │       └─4. Retornar NFCeData ou null
+            │
+            ├─→ NFCeParser.toTransaction(nfce, tenantId, userId)
+            │   │
+            │   └─→ { type: "income", amount: 125.50, ... }
+            │
+            └─→ INSERT INTO transactions (...)
+                │
+                └─→ RLS valida: tenant_id matches ✅
+                    │
+                    └─→ Dados no banco! ✅
+
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                          PARSER CSV WORKFLOW                              ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+Usuário (PDV)
+    │
+    └─→ Exporta CSV → vendas.csv (de Saipos, GrandChef, etc)
+        │
+        └─→ Upload via: POST /import/upload-csv
+            │
+            ├─→ Controller recebe arquivo
+            │   │
+            │   ├─→ CSVParser.detectTemplate(csvBuffer)
+            │   │   │
+            │   │   ├─1. Ler headers
+            │   │   ├─2. Contar quantas colunas conhecidas
+            │   │   └─3. Retornar melhor template (saipos/grandchef/generic)
+            │   │
+            │   └─→ CSVParser.parse(csvBuffer, template)
+            │       │
+            │       ├─1. Parsear CSV (papaparse)
+            │       ├─2. Mapear colunas (Data → transaction_date, etc)
+            │       ├─3. Normalizar datas (DD/MM/YYYY → YYYY-MM-DD)
+            │       ├─4. Normalizar valores (vírgula → ponto)
+            │       └─5. Retornar array de rows
+            │
+            ├─→ Para cada row:
+            │   │
+            │   └─→ CSVParser.toTransaction(row, tenantId, userId)
+            │       │
+            │       └─→ { type: "income"/"expense", amount: 45.50, ... }
+            │
+            └─→ INSERT INTO transactions (...) [batch]
+                │
+                └─→ RLS valida: tenant_id matches ✅
+                    │
+                    └─→ Dados no banco! ✅
+
+
+ARQUIVOS QUE VOCÊ VAI CRIAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✏️ NOVO
+
+1️⃣ apps/api/src/import/parsers/nfce-parser.ts
+   ├─ Export: NFCeItem (interface)
+   ├─ Export: NFCeData (interface)
+   └─ Export: NFCeParser (class)
+      ├─ static parse(xmlBuffer): NFCeData | null
+      ├─ static toTransaction(nfce, tenantId, userId)
+      ├─ private static isValidNFCe(doc)
+      └─ private static extractItens(doc)
+
+2️⃣ apps/api/src/import/parsers/csv-parser.ts
+   ├─ Export: CSVTemplate (interface)
+   └─ Export: CSVParser (class)
+      ├─ static TEMPLATES: { saipos, grandchef, generic }
+      ├─ static detectTemplate(csvBuffer): CSVTemplate
+      ├─ static parse(csvBuffer, template): Record[]
+      └─ static toTransaction(row, tenantId, userId)
+
+3️⃣ apps/api/src/import/parsers/index.ts
+   └─ Re-export nfce-parser e csv-parser
+
+📝 EXPANDIR
+
+4️⃣ apps/api/src/import/import.controller.ts
+   ├─ Adicionar: @Post("upload-nfce")
+   └─ Adicionar: @Post("upload-csv")
+
+
+DEPENDÊNCIAS (já ou quase instaladas)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Já tem:
+   • papaparse (^5.5.3)      ← Parsear CSV
+   • xlsx (^0.18.5)          ← Parsear Excel
+   • date-fns (^4.1.0)       ← Normalizar datas
+   • decimal.js (^10.5.0)    ← Valores monetários
+
+❌ Instalar:
+   pnpm add xml2js           ← Parsear XML NFCe
+   pnpm add -D @types/xml2js ← Types do xml2js
+
+
+COMO COMEÇAR (5 minutos)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Leia: QUICK_START_SEMANA2.md (5 min)
+   └─ Entenda o escopo: NFCe vs CSV
+
+2. Leia: SEMANA2_PARSERS_IMPORTACAO.md (30 min)
+   ├─ Estrutura de XML NFCe
+   ├─ Interfaces TypeScript
+   ├─ Exemplos de código
+   └─ Tarefas dia-a-dia
+
+3. Prepare ambiente:
+   ```bash
+   cd apps/api
+   pnpm add xml2js @types/xml2js
+   mkdir -p src/import/parsers
+   ```
+
+4. Crie arquivos vazios:
+   ```bash
+   touch src/import/parsers/{nfce-parser,csv-parser,index}.ts
+   ```
+
+5. Abra Claude Code:
+   ```bash
+   code .  # ou use claude CLI
+   ```
+
+
+CHECKLIST DIÁRIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Dia 1: Parser NFCe
+   [ ] Ler: SEMANA2_PARSERS_IMPORTACAO.md (seção 1️⃣)
+   [ ] Criar: nfce-parser.ts (interfaces + classe)
+   [ ] Implementar: parse() e toTransaction()
+   [ ] Testar: com arquivo XML de exemplo
+   [ ] Commit: git add/commit
+
+✅ Dia 2: Parser CSV
+   [ ] Ler: SEMANA2_PARSERS_IMPORTACAO.md (seção 2️⃣)
+   [ ] Criar: csv-parser.ts (templates + classe)
+   [ ] Implementar: detectTemplate() e parse()
+   [ ] Testar: com arquivo CSV de exemplo
+   [ ] Commit: git add/commit
+
+✅ Dia 3-4: Upload Endpoints
+   [ ] Expandir: import.controller.ts
+   [ ] Adicionar: @Post("upload-nfce")
+   [ ] Adicionar: @Post("upload-csv")
+   [ ] Testar: via Swagger/Postman
+   [ ] Validar: dados inseridos no banco
+   [ ] Commit: git add/commit
+
+✅ Dia 5: Polish + Docs
+   [ ] Criar testes unitários
+   [ ] Documentação de uso
+   [ ] Tratamento de erros
+   [ ] Commit final
+
+
+PORTAS E LINKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Frontend:  http://localhost:3000
+Backend:   http://localhost:3001
+Swagger:   http://localhost:3001/docs
+Database:  https://app.supabase.com (seu projeto)
+
+
+PRÓXIMAS FASES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Semana 3: Trigger.dev (background jobs, webhooks)
+Semana 4: UI no frontend (componente de upload)
+Semana 5: Notificações + Analytics
+
+
+SUPORTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Dúvidas? Abra um dos arquivos .md:
+
+1. Rápido (5 min):     QUICK_START_SEMANA2.md
+2. Detalhado (30 min): SEMANA2_PARSERS_IMPORTACAO.md
+3. Checklist (10 min): PREPARACAO_SEMANA2.md
+
+Ou procure por palavra-chave dentro dos documentos!
+
+
+================================================================================
+                              Bom desenvolvimento! 🚀
+================================================================================
