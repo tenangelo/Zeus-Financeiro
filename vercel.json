@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/web && pnpm run build",
-  "installCommand": "pnpm install",
-  "outputDirectory": "apps/web/.next",
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install --filter=apps/web",
+  "outputDirectory": ".next",
   "public": false,
   "env": [
     {
