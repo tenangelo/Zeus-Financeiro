@@ -59,7 +59,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           .from('profiles')
           .select('tenant_id')
           .eq('id', user.id)
-          .single();
+          .single() as any;
 
         if (profileError) {
           setError('Erro ao obter tenant do profile');
@@ -67,7 +67,7 @@ export function TenantProvider({ children }: { children: React.ReactNode }) {
           return;
         }
 
-        setTenantId(profile?.tenant_id || null);
+        setTenantId((profile as any)?.tenant_id || null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro desconhecido');
       } finally {

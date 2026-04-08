@@ -57,7 +57,17 @@
       "Bash(xargs ls:*)",
       "mcp__supabase__apply_migration",
       "mcp__supabase__execute_sql",
-      "Bash(gh auth:*)"
+      "Bash(gh auth:*)",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__list_projects",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__list_deployments",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__get_project",
+      "Bash(vercel deploy:*)",
+      "Bash(npx vercel@latest deploy --prod --confirm)",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__get_deployment_build_logs",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__get_runtime_logs",
+      "Bash(pnpm run:*)",
+      "Bash(npx pnpm@latest install)",
+      "Bash(npx pnpm:*)"
     ]
   }
 }
