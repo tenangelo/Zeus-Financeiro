@@ -1,12 +1,14 @@
 {
   "build": {
-    "builder": "nixpacks"
+    "builder": "nixpacks",
+    "buildCommand": "npm run build"
   },
   "deploy": {
-    "startCommand": "next start",
+    "startCommand": "npm run start",
     "restartPolicyType": "on_failure"
   },
   "environmentVariables": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "HOSTNAME": "0.0.0.0"
   }
 }

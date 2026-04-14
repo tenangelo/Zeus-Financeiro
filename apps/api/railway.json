@@ -1,6 +1,7 @@
 {
   "build": {
-    "builder": "nixpacks"
+    "builder": "nixpacks",
+    "buildCommand": "npm run build"
   },
   "deploy": {
     "startCommand": "node dist/main",
