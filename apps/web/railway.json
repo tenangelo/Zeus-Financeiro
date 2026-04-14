@@ -1,0 +1,23 @@
+{
+  "build": {
+    "builder": "nixpacks"
+  },
+  "deploy": {
+    "startCommand": "next start --port 3000",
+    "numReplicas": 1,
+    "restartPolicyType": "on_failure",
+    "restartPolicyMaxRetries": 5,
+    "healthcheck": {
+      "type": "http",
+      "path": "/",
+      "interval": 10,
+      "timeout": 5,
+      "successThreshold": 1,
+      "failureThreshold": 3
+    }
+  },
+  "environmentVariables": {
+    "NODE_ENV": "production",
+    "PORT": "3000"
+  }
+}
