@@ -8,6 +8,8 @@
     "restartPolicyType": "on_failure"
   },
   "environmentVariables": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "FRONTEND_URL": "https://zeusweb-production.up.railway.app",
+    "PORT": "3001"
   }
 }
