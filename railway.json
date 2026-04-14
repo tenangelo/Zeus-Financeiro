@@ -3,12 +3,12 @@
   "build": {
     "builder": "nixpacks",
     "config": {
-      "buildCommand": "cd apps/api && pnpm install && pnpm run build"
+      "buildCommand": "pnpm install && pnpm run build --filter=@zeus/api"
     }
   },
   "deploy": {
     "numReplicas": 1,
-    "startCommand": "cd apps/api && pnpm run start:prod",
+    "startCommand": "node apps/api/dist/main",
     "restartPolicyType": "on_failure",
     "restartPolicyMaxRetries": 5,
     "healthcheck": {
