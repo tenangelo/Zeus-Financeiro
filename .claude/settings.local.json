@@ -88,7 +88,13 @@
       "Bash(ls pnpm*)",
       "Bash(read RID)",
       "Bash(curl -s https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs/__TRACKED_VAR__/jobs)",
-      "Bash(awk 'NR%2{printf \"%s \", $0; next} {print}')"
+      "Bash(awk 'NR%2{printf \"%s \", $0; next} {print}')",
+      "mcp__Railway__check-railway-status",
+      "Bash(npx vercel@latest env add NEXT_PUBLIC_API_URL \"https://zeusapi.railway.internal\" --yes)",
+      "Bash(npx vercel@latest env add NEXT_PUBLIC_API_URL production --value \"https://zeusapi.railway.internal\" --yes)",
+      "Bash(npx vercel@latest env ls)",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__deploy_to_vercel",
+      "Bash(npx vercel@latest deploy --prod --yes)"
     ]
   }
 }
