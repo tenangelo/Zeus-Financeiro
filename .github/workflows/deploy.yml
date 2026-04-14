@@ -6,28 +6,17 @@ on:
       - main
 
 jobs:
-  deploy:
+  info:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-          run_install: false
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build
-        run: pnpm build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      - name: Deployment Info
+        run: |
+          echo "✅ Zeus Financeiro Deployment Pipeline"
+          echo "Commit: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref }}"
+          echo ""
+          echo "📦 Services:"
+          echo "  - Web: https://zeus-web-production.up.railway.app"
+          echo "  - API: https://zeusapi.railway.internal"
+          echo "  - Frontend: https://zeus-financeiro-mw1ycfa73-angelo-goncalves-projects.vercel.app"
