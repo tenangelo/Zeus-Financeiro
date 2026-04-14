@@ -38,14 +38,14 @@ jobs:
       - run: pnpm install
 
       - name: Lint
-        run: pnpm run lint --filter=apps/api --filter=apps/web
+        run: pnpm run lint --filter=@zeus/api --filter=@zeus/web
         continue-on-error: true
 
       - name: Build API
-        run: pnpm run build --filter=apps/api
+        run: pnpm run build --filter=@zeus/api
 
       - name: Build Web
-        run: pnpm run build --filter=apps/web
+        run: pnpm run build --filter=@zeus/web
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
