@@ -67,7 +67,28 @@
       "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__get_runtime_logs",
       "Bash(pnpm run:*)",
       "Bash(npx pnpm@latest install)",
-      "Bash(npx pnpm:*)"
+      "Bash(npx pnpm:*)",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__list_teams",
+      "mcp__supabase__list_migrations",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__search_vercel_documentation",
+      "Bash(gh run:*)",
+      "Bash(npx -y @github/cli)",
+      "Bash(gh --version)",
+      "Bash(winget install:*)",
+      "Bash(git config:*)",
+      "Bash(npm show:*)",
+      "Bash(curl -sL https://github.com/cli/cli/releases/download/v2.48.0/gh_2.48.0_windows_amd64.zip -o /tmp/gh.zip)",
+      "Bash(unzip -q /tmp/gh.zip -d /tmp)",
+      "Bash(/tmp/gh_2.48.0_windows_amd64/bin/gh --version)",
+      "Bash(curl -s \"https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs\")",
+      "Bash(curl -s \"https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs/24378532674/jobs\")",
+      "Bash(npm list:*)",
+      "Bash(curl -s \"https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs?per_page=1\")",
+      "Bash(curl -s \"https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs/24378973247/jobs\")",
+      "Bash(ls pnpm*)",
+      "Bash(read RID)",
+      "Bash(curl -s https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs/__TRACKED_VAR__/jobs)",
+      "Bash(awk 'NR%2{printf \"%s \", $0; next} {print}')"
     ]
   }
 }
