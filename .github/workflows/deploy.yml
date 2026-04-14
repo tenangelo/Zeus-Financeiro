@@ -28,13 +28,15 @@ jobs:
 
       - uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 9
 
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: false
 
-      - run: npm ci || (pnpm install --no-frozen-lockfile)
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
 
       - name: Lint
         run: pnpm run lint --filter=@zeus/api --filter=@zeus/web
