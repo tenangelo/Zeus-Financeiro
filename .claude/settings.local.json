@@ -94,7 +94,25 @@
       "Bash(npx vercel@latest env add NEXT_PUBLIC_API_URL production --value \"https://zeusapi.railway.internal\" --yes)",
       "Bash(npx vercel@latest env ls)",
       "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__deploy_to_vercel",
-      "Bash(npx vercel@latest deploy --prod --yes)"
+      "Bash(npx vercel@latest deploy --prod --yes)",
+      "Bash(curl -s -H \"Authorization: Bearer 03fffa2f-c5d9-4c52-8a8c-93ab7048336c\" \"https://api.railway.app/graphql\" -X POST -H \"Content-Type: application/json\" -d '{\"query\": \"{ deployments\\(first: 5\\) { edges { node { id status createdAt service { name } } } } }\"}')",
+      "Bash(curl -sSL https://railway.app/install.sh)",
+      "Bash(bash)",
+      "WebFetch(domain:zeus-financeiro-mw1ycfa73-angelo-goncalves-projects.vercel.app)",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__get_access_to_vercel_url",
+      "mcp__7354917c-7575-4c0f-baf7-1c6ff4488c80__web_fetch_vercel_url",
+      "Bash(railway login:*)",
+      "Bash(npx @railway/cli@latest status --token=\"03fffa2f-c5d9-4c52-8a8c-93ab7048336c\")",
+      "Bash(curl -s -H \"Authorization: Bearer 03fffa2f-c5d9-4c52-8a8c-93ab7048336c\" \"https://backend.railway.app/graphql\" -X POST -H \"Content-Type: application/json\" -d '{\"query\": \"{ me { id } }\"}')",
+      "Bash(curl -s -X POST https://api.railway.app/graphql -H 'Authorization: Bearer 03fffa2f-c5d9-4c52-8a8c-93ab7048336c' -H 'Content-Type: application/json' -d '{\"query\": \"{project\\(id:\\\\\"\\\\\"\\){ id name}}\"}')",
+      "Bash(curl -s \"https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs?branch=main&status=completed\")",
+      "Bash(curl -s \"https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs?branch=main\")",
+      "Bash(curl -s \"https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs/24411148100/jobs\")",
+      "Bash(curl -s \"https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs/24411148100/logs\")",
+      "Bash(tar -xzO)",
+      "Bash(npx pnpm@8 install)",
+      "Bash(npx pnpm@9 install)",
+      "Bash(curl -s -X POST -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -H 'X-GitHub-Api-Version: 2022-11-28' https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs/24411148100/rerun)"
     ]
   }
 }

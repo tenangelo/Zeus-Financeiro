@@ -1,0 +1,19 @@
+{
+  "build": {
+    "builder": "nixpacks"
+  },
+  "deploy": {
+    "startCommand": "node dist/main",
+    "restartPolicyType": "on_failure",
+    "healthcheck": {
+      "http": {
+        "path": "/health",
+        "port": 3001
+      }
+    }
+  },
+  "environmentVariables": {
+    "NODE_ENV": "production",
+    "PORT": "3001"
+  }
+}
