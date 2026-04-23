@@ -48,8 +48,5 @@ export class UpdateTransactionDto {
   @IsOptional()
   notes?: string;
 
-  @ApiPropertyOptional({ description: "URL do comprovante no Storage" })
-  @IsString()
-  @IsOptional()
-  receipt_url?: string;
+
 }

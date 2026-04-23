@@ -105,23 +105,18 @@ export class TransactionsService {
 
     if (!existing) throw new NotFoundException(`Lançamento ${id} não encontrado.`);
 
-    // Comprovante pode ser anexado em qualquer status; demais campos só em pendente
-    const isReceiptOnly = dto.receipt_url !== undefined &&
-      Object.keys(dto).every(k => k === "receipt_url");
-
-    if (!isReceiptOnly && existing.status !== "pending") {
+    if (existing.status !== "pending") {
       throw new BadRequestException("Apenas lançamentos pendentes podem ser editados.");
     }
 
-    const patch: Record<string, unknown> = {};
-    if (dto.type !== undefined) patch.type = dto.type;
-    if (dto.category !== undefined) patch.category = dto.category;
-    if (dto.description !== undefined) patch.description = dto.description;
-    if (dto.amount !== undefined) patch.amount = dto.amount;
-    if (dto.transaction_date !== undefined) patch.transaction_date = dto.transaction_date;
-    if (dto.due_date !== undefined) patch.due_date = dto.due_date;
-    if (dto.notes !== undefined) patch.notes = dto.notes;
-    if (dto.receipt_url !== undefined) patch.receipt_url = dto.receipt_url;
+    type TransactionUpdate = Database["public"]["Tables"]["transactions"]["Update"];
+    const patch: TransactionUpdate = {
+      ...(dto.category !== undefined && { category: dto.category }),
+      ...(dto.description !== undefined && { description: dto.description }),
+      ...(dto.amount !== undefined && { amount: dto.amount }),
+      ...(dto.due_date !== undefined && { due_date: dto.due_date }),
+      ...(dto.notes !== undefined && { notes: dto.notes }),
+    };
 
     const { data, error } = await this.supabase
       .from("transactions")

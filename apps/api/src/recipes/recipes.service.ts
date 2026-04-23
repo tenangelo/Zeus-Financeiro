@@ -135,13 +135,11 @@ export class RecipesService {
   ): Promise<RecipeWithItems> {
     await this.findOne(tenantId, id);
 
-    let theoreticalCost: Decimal | undefined;
     let ingredients: Ingredient[] = [];
 
     if (dto.items && dto.items.length > 0) {
       const ingredientIds = dto.items.map((i) => i.ingredient_id);
       ingredients = await this.fetchIngredients(tenantId, ingredientIds);
-      theoreticalCost = this.calcTheoreticalCost(dto.items, ingredients);
     }
 
     const { error } = await this.supabase
@@ -156,9 +154,6 @@ export class RecipesService {
           preparation_time_min: dto.preparation_time_min,
         }),
         ...(dto.is_active !== undefined && { is_active: dto.is_active }),
-        ...(theoreticalCost !== undefined && {
-          theoretical_cost: parseFloat(theoreticalCost.toFixed(4)),
-        }),
       })
       .eq("tenant_id", tenantId)
       .eq("id", id);
