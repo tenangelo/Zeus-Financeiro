@@ -135,16 +135,14 @@ export class RecipesService {
   ): Promise<RecipeWithItems> {
     await this.findOne(tenantId, id);
 
-    let theoreticalCost: Decimal | undefined;
     let ingredients: Ingredient[] = [];
 
     if (dto.items && dto.items.length > 0) {
       const ingredientIds = dto.items.map((i) => i.ingredient_id);
       ingredients = await this.fetchIngredients(tenantId, ingredientIds);
-      theoreticalCost = this.calcTheoreticalCost(dto.items, ingredients);
     }
 
-    const patch: Record<string, any> = {};
+    const patch: Database["public"]["Tables"]["recipes"]["Update"] = {};
     if (dto.name !== undefined) patch.name = dto.name;
     if (dto.category !== undefined) patch.category = dto.category;
     if (dto.description !== undefined) patch.description = dto.description;
@@ -152,11 +150,10 @@ export class RecipesService {
     if (dto.serving_size !== undefined) patch.serving_size = dto.serving_size;
     if (dto.preparation_time_min !== undefined) patch.preparation_time_min = dto.preparation_time_min;
     if (dto.is_active !== undefined) patch.is_active = dto.is_active;
-    if (theoreticalCost !== undefined) patch.theoretical_cost = parseFloat(theoreticalCost.toFixed(4));
 
     const { error } = await this.supabase
       .from("recipes")
-      .update(patch as any)
+      .update(patch)
       .eq("tenant_id", tenantId)
       .eq("id", id);
 
