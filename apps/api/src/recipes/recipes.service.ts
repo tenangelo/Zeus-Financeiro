@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Decimal } from "decimal.js";
-import { SUPABASE_CLIENT } from "../supabase/supabase.module";
+import { USER_SUPABASE_CLIENT } from "../supabase/supabase.module";
 import type { Database } from "@zeus/database";
 import { CreateRecipeDto, RecipeItemDto } from "./dto/create-recipe.dto";
 import { UpdateRecipeDto } from "./dto/update-recipe.dto";
@@ -40,7 +40,7 @@ export interface RecipeCostPreview {
 @Injectable()
 export class RecipesService {
   constructor(
-    @Inject(SUPABASE_CLIENT)
+    @Inject(USER_SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient<Database>
   ) {}
 
@@ -144,22 +144,19 @@ export class RecipesService {
       theoreticalCost = this.calcTheoreticalCost(dto.items, ingredients);
     }
 
+    const patch: Record<string, any> = {};
+    if (dto.name !== undefined) patch.name = dto.name;
+    if (dto.category !== undefined) patch.category = dto.category;
+    if (dto.description !== undefined) patch.description = dto.description;
+    if (dto.sale_price !== undefined) patch.sale_price = dto.sale_price;
+    if (dto.serving_size !== undefined) patch.serving_size = dto.serving_size;
+    if (dto.preparation_time_min !== undefined) patch.preparation_time_min = dto.preparation_time_min;
+    if (dto.is_active !== undefined) patch.is_active = dto.is_active;
+    if (theoreticalCost !== undefined) patch.theoretical_cost = parseFloat(theoreticalCost.toFixed(4));
+
     const { error } = await this.supabase
       .from("recipes")
-      .update({
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.category !== undefined && { category: dto.category }),
-        ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.sale_price !== undefined && { sale_price: dto.sale_price }),
-        ...(dto.serving_size !== undefined && { serving_size: dto.serving_size }),
-        ...(dto.preparation_time_min !== undefined && {
-          preparation_time_min: dto.preparation_time_min,
-        }),
-        ...(dto.is_active !== undefined && { is_active: dto.is_active }),
-        ...(theoreticalCost !== undefined && {
-          theoretical_cost: parseFloat(theoreticalCost.toFixed(4)),
-        }),
-      })
+      .update(patch as any)
       .eq("tenant_id", tenantId)
       .eq("id", id);
 

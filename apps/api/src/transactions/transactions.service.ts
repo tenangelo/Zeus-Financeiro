@@ -1,7 +1,7 @@
 import { Injectable, Inject, NotFoundException, BadRequestException } from "@nestjs/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Decimal } from "decimal.js";
-import { SUPABASE_CLIENT } from "../supabase/supabase.module";
+import { USER_SUPABASE_CLIENT } from "../supabase/supabase.module";
 import type { Database } from "@zeus/database";
 import { CreateTransactionDto } from "./dto/create-transaction.dto";
 import { QueryTransactionDto } from "./dto/query-transaction.dto";
@@ -21,7 +21,7 @@ export interface CashFlowSummary {
 @Injectable()
 export class TransactionsService {
   constructor(
-    @Inject(SUPABASE_CLIENT)
+    @Inject(USER_SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient<Database>
   ) {}
 
@@ -113,7 +113,7 @@ export class TransactionsService {
       throw new BadRequestException("Apenas lançamentos pendentes podem ser editados.");
     }
 
-    const patch: Record<string, unknown> = {};
+    const patch: Record<string, any> = {};
     if (dto.type !== undefined) patch.type = dto.type;
     if (dto.category !== undefined) patch.category = dto.category;
     if (dto.description !== undefined) patch.description = dto.description;
@@ -125,7 +125,7 @@ export class TransactionsService {
 
     const { data, error } = await this.supabase
       .from("transactions")
-      .update(patch)
+      .update(patch as any)
       .eq("tenant_id", tenantId)
       .eq("id", id)
       .select()

@@ -112,7 +112,16 @@
       "Bash(tar -xzO)",
       "Bash(npx pnpm@8 install)",
       "Bash(npx pnpm@9 install)",
-      "Bash(curl -s -X POST -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -H 'X-GitHub-Api-Version: 2022-11-28' https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs/24411148100/rerun)"
+      "Bash(curl -s -X POST -H 'Authorization: Bearer __CMDSUB_OUTPUT__' -H 'X-GitHub-Api-Version: 2022-11-28' https://api.github.com/repos/tenangelo/Zeus-Financeiro/actions/runs/24411148100/rerun)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" \"https://zeus-web-production.up.railway.app\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" \"https://zeusapi.railway.internal/health\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" \"https://zeus-financeiro-mw1ycfa73-angelo-goncalves-projects.vercel.app\")",
+      "Bash(curl -s -X POST https://zeusapi.railway.internal/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"ten.angelo@gmail.com\",\"password\":\"test\"}')",
+      "Bash(npx vercel@latest env add NEXT_PUBLIC_API_URL production --value \"https://zeusapi-production-b66c.up.railway.app\" --yes)",
+      "Bash(npx vercel@latest env rm NEXT_PUBLIC_API_URL production --yes)",
+      "Bash(curl -s -w \"\\\\nHTTP Status: %{http_code}\\\\n\" \"https://zeusapi-production-b66c.up.railway.app/health\")",
+      "Bash(curl -s -w \"\\\\nHTTP Status: %{http_code}\\\\n\" \"https://zeusapi-production-b66c.up.railway.app/\")",
+      "Bash(curl -s -X POST https://zeusapi-production-b66c.up.railway.app/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"test@test.com\",\"password\":\"test\"}')"
     ]
   }
 }

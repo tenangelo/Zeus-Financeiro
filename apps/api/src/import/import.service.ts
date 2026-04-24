@@ -2,7 +2,7 @@ import { Injectable, Inject, BadRequestException } from "@nestjs/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 import * as Papa from "papaparse";
 import * as XLSX from "xlsx";
-import { SUPABASE_CLIENT } from "../supabase/supabase.module";
+import { USER_SUPABASE_CLIENT } from "../supabase/supabase.module";
 import type { Database } from "@zeus/database";
 
 type ImportJob = Database["public"]["Tables"]["import_jobs"]["Row"];
@@ -25,7 +25,7 @@ export interface ImportResult {
 @Injectable()
 export class ImportService {
   constructor(
-    @Inject(SUPABASE_CLIENT)
+    @Inject(USER_SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient<Database>
   ) {}
 

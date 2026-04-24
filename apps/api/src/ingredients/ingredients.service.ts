@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from "@nestjs/common";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SUPABASE_CLIENT } from "../supabase/supabase.module";
+import { USER_SUPABASE_CLIENT } from "../supabase/supabase.module";
 import type { Database } from "@zeus/database";
 import { CreateIngredientDto } from "./dto/create-ingredient.dto";
 import { UpdateIngredientDto } from "./dto/update-ingredient.dto";
@@ -16,7 +16,7 @@ type Ingredient = Database["public"]["Tables"]["ingredients"]["Row"];
 @Injectable()
 export class IngredientsService {
   constructor(
-    @Inject(SUPABASE_CLIENT)
+    @Inject(USER_SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient<Database>
   ) {}
 
@@ -122,21 +122,20 @@ export class IngredientsService {
     // Verifica existência antes de atualizar
     await this.findOne(tenantId, id);
 
+    const patch: Database["public"]["Tables"]["ingredients"]["Update"] = {};
+    if (dto.name !== undefined) patch.name = dto.name;
+    if (dto.category !== undefined) patch.category = dto.category;
+    if (dto.unit !== undefined) patch.unit = dto.unit;
+    if (dto.unit_cost !== undefined) patch.unit_cost = dto.unit_cost;
+    if (dto.stock_quantity !== undefined) patch.stock_quantity = dto.stock_quantity;
+    if (dto.min_stock_alert !== undefined) patch.min_stock_alert = dto.min_stock_alert;
+    if (dto.expiry_date !== undefined) patch.expiry_date = dto.expiry_date;
+    if (dto.preferred_supplier_id !== undefined) patch.preferred_supplier_id = dto.preferred_supplier_id;
+    if (dto.is_active !== undefined) patch.is_active = dto.is_active;
+
     const { data, error } = await this.supabase
       .from("ingredients")
-      .update({
-        ...(dto.name !== undefined && { name: dto.name }),
-        ...(dto.category !== undefined && { category: dto.category }),
-        ...(dto.unit !== undefined && { unit: dto.unit }),
-        ...(dto.unit_cost !== undefined && { unit_cost: dto.unit_cost }),
-        ...(dto.stock_quantity !== undefined && { stock_quantity: dto.stock_quantity }),
-        ...(dto.min_stock_alert !== undefined && { min_stock_alert: dto.min_stock_alert }),
-        ...(dto.expiry_date !== undefined && { expiry_date: dto.expiry_date }),
-        ...(dto.preferred_supplier_id !== undefined && {
-          preferred_supplier_id: dto.preferred_supplier_id,
-        }),
-        ...(dto.is_active !== undefined && { is_active: dto.is_active }),
-      })
+      .update(patch)
       .eq("tenant_id", tenantId)
       .eq("id", id)
       .select()

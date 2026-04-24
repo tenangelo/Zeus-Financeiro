@@ -1,7 +1,7 @@
 import { Injectable, Inject, BadRequestException } from "@nestjs/common";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { Decimal } from "decimal.js";
-import { SUPABASE_CLIENT } from "../supabase/supabase.module";
+import { USER_SUPABASE_CLIENT } from "../supabase/supabase.module";
 import type { Database } from "@zeus/database";
 
 // Decimal.js garante precisão financeira (evita erros de ponto flutuante)
@@ -36,7 +36,7 @@ export interface CmvPeriodResult {
 @Injectable()
 export class CmvService {
   constructor(
-    @Inject(SUPABASE_CLIENT)
+    @Inject(USER_SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient<Database>
   ) {}
 

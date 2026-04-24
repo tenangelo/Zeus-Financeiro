@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@zeus/database";
-import { SUPABASE_CLIENT } from "../supabase/supabase.module";
+import { ADMIN_SUPABASE_CLIENT } from "../supabase/supabase.module";
 import type { AuthenticatedRequest } from "./auth.guard";
 
 /**
@@ -20,7 +20,7 @@ import type { AuthenticatedRequest } from "./auth.guard";
 @Injectable()
 export class TenantGuard implements CanActivate {
   constructor(
-    @Inject(SUPABASE_CLIENT)
+    @Inject(ADMIN_SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient<Database>
   ) {}
 

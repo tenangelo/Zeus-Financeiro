@@ -33,9 +33,23 @@ async function bootstrap() {
     })
   );
 
-  // CORS — ajustar origin em produção
+  // CORS — aceita lista de origins separadas por vírgula via ALLOWED_ORIGINS
+  // Ex: ALLOWED_ORIGINS=https://app.vercel.app,https://railway.app,http://localhost:3000
+  const rawOrigins = process.env.ALLOWED_ORIGINS ?? process.env.FRONTEND_URL ?? "http://localhost:3000";
+  const allowedOrigins = rawOrigins.split(",").map((o) => o.trim()).filter(Boolean);
+
   app.enableCors({
-    origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
+    origin: (origin, callback) => {
+      // Permite requisições sem origin (ex: curl, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+      const allowed = allowedOrigins.some((o) => {
+        if (o.includes("*")) {
+          return new RegExp("^" + o.replace(/\*/g, ".*") + "$").test(origin);
+        }
+        return o === origin;
+      });
+      callback(allowed ? null : new Error("CORS: origem não permitida"), allowed);
+    },
     credentials: true,
   });
 

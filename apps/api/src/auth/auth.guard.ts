@@ -7,7 +7,7 @@ import {
 } from "@nestjs/common";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FastifyRequest } from "fastify";
-import { SUPABASE_CLIENT } from "../supabase/supabase.module";
+import { ADMIN_SUPABASE_CLIENT } from "../supabase/supabase.module";
 
 export interface JwtPayload {
   sub: string;    // auth.users.id (UUID)
@@ -30,7 +30,7 @@ export interface AuthenticatedRequest extends FastifyRequest {
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    @Inject(SUPABASE_CLIENT)
+    @Inject(ADMIN_SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient,
   ) {}
 

@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { SUPABASE_CLIENT } from "../supabase/supabase.module";
+import { USER_SUPABASE_CLIENT } from "../supabase/supabase.module";
 import type { Database } from "@zeus/database";
 import { CreateMovementDto } from "./dto/create-movement.dto";
 import { IngredientsService } from "../ingredients/ingredients.service";
@@ -14,7 +14,7 @@ type StockMovement = Database["public"]["Tables"]["stock_movements"]["Row"];
 @Injectable()
 export class StockService {
   constructor(
-    @Inject(SUPABASE_CLIENT)
+    @Inject(USER_SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient<Database>,
     private readonly ingredientsService: IngredientsService
   ) {}
