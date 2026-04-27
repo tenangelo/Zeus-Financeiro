@@ -10,6 +10,7 @@ import { RecipesModule } from "./recipes/recipes.module";
 import { StockModule } from "./stock/stock.module";
 import { TransactionsModule } from "./transactions/transactions.module";
 import { ImportModule } from "./import/import.module";
+import { TenantsModule } from "./tenants/tenants.module";
 import { AppController } from "./app.controller";
 
 @Module({
@@ -26,6 +27,7 @@ import { AppController } from "./app.controller";
     // Módulos de negócio
     SupabaseModule,
     AuthModule,
+    TenantsModule,
     IngredientsModule,
     RecipesModule,
     StockModule,

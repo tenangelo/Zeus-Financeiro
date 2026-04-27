@@ -68,6 +68,7 @@ function QuickAction({ href, label, primary = false }: { href: string; label: st
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [cashflow, setCashflow] = useState<CashFlow | null>(null);
   const [cmv, setCmv] = useState<CmvSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,12 +89,19 @@ export default function DashboardPage() {
           api.get<{ data: CmvSnapshot[] }>(`/cmv/snapshots?limit=1`),
         ]);
         if (cf.status === "fulfilled") setCashflow(cf.value);
-        else setApiError(true);
+        else {
+          // 403 significa que o usuário não tem tenant — redireciona ao onboarding
+          setApiError(true);
+        }
         if (cmvData.status === "fulfilled") {
           const snaps = (cmvData.value as any)?.data;
           if (Array.isArray(snaps) && snaps.length > 0) setCmv(snaps[0]);
         }
-      } catch {
+      } catch (err: any) {
+        if (err?.message?.includes("403") || err?.message?.toLowerCase().includes("tenant")) {
+          router.replace("/onboarding");
+          return;
+        }
         setApiError(true);
       } finally {
         setLoading(false);

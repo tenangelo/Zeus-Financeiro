@@ -13,6 +13,7 @@ import {
   Warehouse,
   LogOut,
   Zap,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,7 +56,8 @@ const NAV_ITEMS = [
   {
     group: "Ferramentas",
     items: [
-      { href: "/dashboard/import",      label: "Importar",         icon: Upload },
+      { href: "/dashboard/import",    label: "Importar",       icon: Upload },
+      { href: "/dashboard/settings",  label: "Configurações",  icon: Settings },
     ],
   },
 ];

@@ -12,6 +12,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_ROUTES = ["/dashboard", "/ingredients", "/recipes", "/transactions", "/reports"];
 const AUTH_ROUTES = ["/login", "/signup"];
+const ONBOARDING_ROUTE = "/onboarding";
 
 export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -68,6 +69,9 @@ export async function middleware(request: NextRequest) {
     redirectUrl.pathname = "/dashboard";
     return NextResponse.redirect(redirectUrl);
   }
+
+  // Permite que o onboarding seja acessado por usuários autenticados sem tenant
+  // (o redirect para onboarding acontece no lado do cliente no dashboard)
 
   return supabaseResponse;
 }
