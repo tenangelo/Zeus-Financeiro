@@ -142,6 +142,31 @@ export class TransactionsService {
     return data;
   }
 
+  async cancel(tenantId: string, id: string): Promise<Transaction> {
+    const { data: existing } = await this.supabase
+      .from("transactions")
+      .select("status")
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+      .single();
+
+    if (!existing) throw new NotFoundException(`Lançamento ${id} não encontrado.`);
+    if (existing.status === "confirmed") {
+      throw new BadRequestException("Lançamentos confirmados não podem ser cancelados.");
+    }
+
+    const { data, error } = await this.supabase
+      .from("transactions")
+      .update({ status: "cancelled" })
+      .eq("tenant_id", tenantId)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error || !data) throw new NotFoundException(`Lançamento ${id} não encontrado.`);
+    return data;
+  }
+
   /**
    * Resumo de fluxo de caixa — alimenta o widget principal do dashboard.
    * Retorna receitas, despesas, resultado líquido e contas a pagar vencendo em 7 dias.

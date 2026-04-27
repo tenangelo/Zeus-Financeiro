@@ -83,4 +83,14 @@ export class TransactionsController {
   ) {
     return this.service.confirm(req.tenantId, id);
   }
+
+  @Patch(":id/cancel")
+  @Version("1")
+  @ApiOperation({ summary: "Cancelar um lançamento pendente" })
+  cancel(
+    @Request() req: AuthenticatedRequest,
+    @Param("id", ParseUUIDPipe) id: string,
+  ) {
+    return this.service.cancel(req.tenantId, id);
+  }
 }

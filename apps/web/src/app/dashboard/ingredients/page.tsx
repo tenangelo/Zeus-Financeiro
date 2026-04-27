@@ -49,6 +49,8 @@ export default function IngredientsPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -71,6 +73,34 @@ export default function IngredientsPage() {
     setForm(EMPTY_FORM);
     setFormError(null);
     setShowForm(true);
+  }
+
+  function openEdit(ing: Ingredient) {
+    setEditId(ing.id);
+    setForm({
+      name: ing.name,
+      unit: ing.unit as (typeof UNITS)[number],
+      unit_cost: String(ing.unit_cost),
+      stock_quantity: String(ing.stock_quantity),
+      min_stock_alert: String(ing.min_stock_alert),
+      category: ing.category ?? "",
+    });
+    setFormError(null);
+    setShowForm(true);
+  }
+
+  async function handleDelete() {
+    if (!deleteConfirmId) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/ingredients/${deleteConfirmId}`);
+      setDeleteConfirmId(null);
+      await load();
+    } catch (err: any) {
+      console.error("Erro ao excluir ingrediente:", err.message);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -254,6 +284,33 @@ export default function IngredientsPage() {
         </div>
       )}
 
+      {/* Modal confirmação de exclusão */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Excluir ingrediente?</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              O ingrediente será desativado e não aparecerá mais nas listagens. Esta ação pode ser revertida pelo suporte.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-2.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? "Excluindo..." : "Sim, excluir"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Busca */}
       <div className="relative max-w-sm">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
@@ -271,7 +328,7 @@ export default function IngredientsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {["Nome", "Categoria", "Unid.", "Custo Unit.", "Estoque", "Mínimo", "Status"].map(h => (
+                {["Nome", "Categoria", "Unid.", "Custo Unit.", "Estoque", "Mínimo", "Status", "Ações"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
@@ -281,7 +338,7 @@ export default function IngredientsPage() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center">
+                  <td colSpan={8} className="px-4 py-10 text-center">
                     <div className="flex justify-center">
                       <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
                     </div>
@@ -289,7 +346,7 @@ export default function IngredientsPage() {
                 </tr>
               ) : ingredients.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center">
+                  <td colSpan={8} className="px-4 py-12 text-center">
                     <p className="text-gray-400 text-sm">
                       {search ? `Nenhum ingrediente encontrado para "${search}".` : "Nenhum ingrediente cadastrado."}
                     </p>
@@ -332,6 +389,22 @@ export default function IngredientsPage() {
                         }`}>
                           {ing.is_active ? "Ativo" : "Inativo"}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => openEdit(ing)}
+                            className="text-xs text-brand-600 hover:text-brand-800 font-medium hover:underline"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(ing.id)}
+                            className="text-xs text-red-500 hover:text-red-700 font-medium hover:underline"
+                          >
+                            Excluir
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

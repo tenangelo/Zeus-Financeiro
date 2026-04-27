@@ -10,6 +10,9 @@ interface Recipe {
   id: string; name: string; category: string | null; serving_size: number;
   serving_unit: string; theoretical_cost: number; sale_price: number | null; is_active: boolean;
 }
+interface RecipeWithItems extends Recipe {
+  items: Array<{ ingredient_id: string; quantity: number; waste_factor_pct: number }>;
+}
 
 const SERVING_UNITS = ["porção", "unidade", "kg", "g", "l", "ml"];
 
@@ -40,6 +43,9 @@ export default function RecipesPage() {
   const [items, setItems] = useState<RecipeItem[]>([{ ...EMPTY_ITEM }]);
   const [preview, setPreview] = useState<{ theoretical_cost: number; margin_pct?: number } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -64,11 +70,50 @@ export default function RecipesPage() {
   useEffect(() => { loadIngredients(); }, []);
 
   function openForm() {
+    setEditId(null);
     setForm(EMPTY_FORM);
     setItems([{ ...EMPTY_ITEM }]);
     setPreview(null);
     setFormError(null);
     setShowForm(true);
+  }
+
+  async function openEdit(r: Recipe) {
+    setEditId(r.id);
+    setForm({
+      name: r.name,
+      category: r.category ?? "",
+      serving_size: String(r.serving_size),
+      serving_unit: r.serving_unit,
+      sale_price: r.sale_price ? String(r.sale_price) : "",
+    });
+    setPreview(null);
+    setFormError(null);
+    // Carrega itens da ficha
+    try {
+      const full = await api.get<RecipeWithItems>(`/recipes/${r.id}`);
+      setItems(full.items.length > 0
+        ? full.items.map(i => ({ ingredient_id: i.ingredient_id, quantity: i.quantity, waste_factor_pct: i.waste_factor_pct }))
+        : [{ ...EMPTY_ITEM }]
+      );
+    } catch {
+      setItems([{ ...EMPTY_ITEM }]);
+    }
+    setShowForm(true);
+  }
+
+  async function handleDelete() {
+    if (!deleteConfirmId) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/recipes/${deleteConfirmId}`);
+      setDeleteConfirmId(null);
+      await loadRecipes();
+    } catch (err: any) {
+      console.error("Erro ao excluir ficha:", err.message);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   async function handlePreview() {
@@ -95,15 +140,22 @@ export default function RecipesPage() {
     }
     setSaving(true);
     try {
-      await api.post("/recipes", {
+      const payload = {
         name: form.name,
         category: form.category || undefined,
         serving_size: parseFloat(form.serving_size) || 1,
         serving_unit: form.serving_unit,
         sale_price: form.sale_price ? parseFloat(form.sale_price) : undefined,
         items: validItems,
-      });
+      };
+
+      if (editId) {
+        await api.patch(`/recipes/${editId}`, payload);
+      } else {
+        await api.post("/recipes", payload);
+      }
       setShowForm(false);
+      setEditId(null);
       await loadRecipes();
     } catch (err: any) {
       setFormError(err.message ?? "Erro ao salvar ficha técnica.");
@@ -140,7 +192,7 @@ export default function RecipesPage() {
           <div className="bg-white w-full max-w-2xl h-full flex flex-col shadow-2xl">
             {/* Header do modal */}
             <div className="flex items-center justify-between p-5 border-b border-gray-100 shrink-0">
-              <h2 className="text-lg font-semibold text-gray-900">Nova Ficha Técnica</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{editId ? "Editar Ficha Técnica" : "Nova Ficha Técnica"}</h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
             </div>
 
@@ -307,7 +359,34 @@ export default function RecipesPage() {
                 disabled={saving}
                 className="flex-1 py-2.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 disabled:opacity-50 transition-colors"
               >
-                {saving ? "Salvando..." : "Salvar Ficha Técnica"}
+                {saving ? "Salvando..." : editId ? "Atualizar Ficha Técnica" : "Salvar Ficha Técnica"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmação de exclusão */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Excluir ficha técnica?</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              A ficha será desativada e não aparecerá mais nas listagens.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-2.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? "Excluindo..." : "Sim, excluir"}
               </button>
             </div>
           </div>
@@ -330,7 +409,7 @@ export default function RecipesPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {["Nome", "Categoria", "Rendimento", "Custo Teórico", "Preço Venda", "Margem", "Status"].map(h => (
+                {["Nome", "Categoria", "Rendimento", "Custo Teórico", "Preço Venda", "Margem", "Status", "Ações"].map(h => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                     {h}
                   </th>
@@ -340,7 +419,7 @@ export default function RecipesPage() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center">
+                  <td colSpan={8} className="px-4 py-10 text-center">
                     <div className="flex justify-center">
                       <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
                     </div>
@@ -348,7 +427,7 @@ export default function RecipesPage() {
                 </tr>
               ) : recipes.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center">
+                  <td colSpan={8} className="px-4 py-12 text-center">
                     <p className="text-gray-400 text-sm">Nenhuma ficha técnica cadastrada.</p>
                     <button onClick={openForm} className="mt-2 text-brand-600 text-sm hover:underline">
                       Criar primeira ficha →
@@ -392,6 +471,22 @@ export default function RecipesPage() {
                         }`}>
                           {r.is_active ? "Ativo" : "Inativo"}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => openEdit(r)}
+                            className="text-xs text-brand-600 hover:text-brand-800 font-medium hover:underline"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(r.id)}
+                            className="text-xs text-red-500 hover:text-red-700 font-medium hover:underline"
+                          >
+                            Excluir
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

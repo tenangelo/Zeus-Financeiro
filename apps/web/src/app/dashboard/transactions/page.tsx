@@ -137,6 +137,10 @@ export default function TransactionsPage() {
   const [logs, setLogs] = useState<TransactionLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
 
+  // Cancel confirmation
+  const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+
   const now = new Date();
   const [filterFrom, setFilterFrom] = useState(
     `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`
@@ -251,6 +255,20 @@ export default function TransactionsPage() {
       await load();
     } catch (err: any) {
       setFormError(err.message);
+    }
+  }
+
+  async function handleCancel() {
+    if (!cancelConfirmId) return;
+    setCancelling(true);
+    try {
+      await api.patch(`/transactions/${cancelConfirmId}/cancel`, {});
+      setCancelConfirmId(null);
+      await load();
+    } catch (err: any) {
+      setFormError(err.message);
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -683,6 +701,33 @@ export default function TransactionsPage() {
         </div>
       )}
 
+      {/* Modal confirmação de cancelamento */}
+      {cancelConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Cancelar lançamento?</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              O lançamento será marcado como cancelado e não entrará nos totais do período.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setCancelConfirmId(null)}
+                className="flex-1 py-2.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="flex-1 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {cancelling ? "Cancelando..." : "Sim, cancelar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Filtros */}
       <div className="flex flex-wrap gap-2">
         <input
@@ -791,6 +836,12 @@ export default function TransactionsPage() {
                               className="text-xs text-gray-500 hover:text-gray-700 font-medium hover:underline"
                             >
                               Editar
+                            </button>
+                            <button
+                              onClick={() => setCancelConfirmId(t.id)}
+                              className="text-xs text-red-500 hover:text-red-700 font-medium hover:underline"
+                            >
+                              Cancelar
                             </button>
                           </>
                         )}
