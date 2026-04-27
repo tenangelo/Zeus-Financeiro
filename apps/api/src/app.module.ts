@@ -11,6 +11,9 @@ import { StockModule } from "./stock/stock.module";
 import { TransactionsModule } from "./transactions/transactions.module";
 import { ImportModule } from "./import/import.module";
 import { TenantsModule } from "./tenants/tenants.module";
+import { AdminModule } from "./admin/admin.module";
+import { PlansModule } from "./plans/plans.module";
+import { StripeModule } from "./stripe/stripe.module";
 import { AppController } from "./app.controller";
 
 @Module({
@@ -28,6 +31,9 @@ import { AppController } from "./app.controller";
     SupabaseModule,
     AuthModule,
     TenantsModule,
+    AdminModule,
+    PlansModule,
+    StripeModule,
     IngredientsModule,
     RecipesModule,
     StockModule,

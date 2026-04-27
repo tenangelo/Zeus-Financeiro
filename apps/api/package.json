@@ -37,6 +37,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "xlsx": "^0.18.5",
+    "stripe": "^17.7.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

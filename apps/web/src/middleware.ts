@@ -10,9 +10,8 @@ import { NextResponse, type NextRequest } from "next/server";
  * (ex: primeiro boot antes de criar o .env), o middleware deixa passar sem autenticar.
  */
 
-const PROTECTED_ROUTES = ["/dashboard", "/ingredients", "/recipes", "/transactions", "/reports"];
+const PROTECTED_ROUTES = ["/dashboard", "/ingredients", "/recipes", "/transactions", "/reports", "/admin", "/onboarding"];
 const AUTH_ROUTES = ["/login", "/signup"];
-const ONBOARDING_ROUTE = "/onboarding";
 
 export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
