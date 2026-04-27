@@ -93,8 +93,8 @@ export default function AdminSubscriptionsPage() {
             ) : subs.length === 0 ? (
               <tr><td colSpan={6} className="px-5 py-12 text-center text-slate-500">Nenhuma assinatura encontrada.</td></tr>
             ) : subs.map(sub => {
-              const st = STATUS_STYLES[sub.status] ?? STATUS_STYLES["canceled"];
-              const StatusIcon = st.icon;
+              const st = STATUS_STYLES[sub.status] ?? STATUS_STYLES["canceled"]!;
+              const StatusIcon = st!.icon;
               return (
                 <tr key={sub.id} className="hover:bg-slate-800/40 transition-colors">
                   <td className="px-5 py-4">
@@ -105,9 +105,9 @@ export default function AdminSubscriptionsPage() {
                     <span className="text-xs text-slate-500 ml-1">({sub.billing_interval === "yearly" ? "anual" : "mensal"})</span>
                   </td>
                   <td className="px-4 py-4">
-                    <span className={`flex items-center gap-1.5 w-fit text-xs font-semibold px-2.5 py-1 rounded-full ${st.cls}`}>
+                    <span className={`flex items-center gap-1.5 w-fit text-xs font-semibold px-2.5 py-1 rounded-full ${st!.cls}`}>
                       <StatusIcon className="h-3 w-3" />
-                      {st.label}
+                      {st!.label}
                     </span>
                     {sub.cancel_at_period_end && <p className="text-[10px] text-orange-400 mt-1">Cancela no fim do período</p>}
                   </td>

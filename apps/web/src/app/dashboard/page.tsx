@@ -99,7 +99,7 @@ export default function DashboardPage() {
         }
       } catch (err: any) {
         if (err?.message?.includes("403") || err?.message?.toLowerCase().includes("tenant")) {
-          router.replace("/onboarding");
+          router.replace("/onboarding" as any);
           return;
         }
         setApiError(true);

@@ -115,7 +115,7 @@ export default function AdminUsersPage() {
                       <p className="font-medium text-white flex items-center gap-1.5">
                         {user.full_name}
                         {user.is_super_admin && (
-                          <Star className="h-3 w-3 text-yellow-400" fill="currentColor" title="Super Admin" />
+                          <Star className="h-3 w-3 text-yellow-400" fill="currentColor" />
                         )}
                       </p>
                       <p className="text-[10px] font-mono text-slate-600">{user.id.slice(0, 8)}...</p>
