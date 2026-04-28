@@ -121,7 +121,8 @@
       "Bash(npx vercel@latest env rm NEXT_PUBLIC_API_URL production --yes)",
       "Bash(curl -s -w \"\\\\nHTTP Status: %{http_code}\\\\n\" \"https://zeusapi-production-b66c.up.railway.app/health\")",
       "Bash(curl -s -w \"\\\\nHTTP Status: %{http_code}\\\\n\" \"https://zeusapi-production-b66c.up.railway.app/\")",
-      "Bash(curl -s -X POST https://zeusapi-production-b66c.up.railway.app/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"test@test.com\",\"password\":\"test\"}')"
+      "Bash(curl -s -X POST https://zeusapi-production-b66c.up.railway.app/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"test@test.com\",\"password\":\"test\"}')",
+      "Bash(git merge *)"
     ]
   }
 }

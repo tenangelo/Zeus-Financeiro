@@ -13,7 +13,7 @@ DECLARE
   -- ============================================================
   -- !! SUBSTITUA PELO SEU UUID (Authentication → Users) !!
   -- ============================================================
-  v_user_id      UUID := 'COLOQUE_SEU_UUID_AQUI';
+  v_user_id      UUID := 'a4384d9b-0cbe-4f5a-84b3-c15cafd0f5c4';
 
   -- Variáveis internas (não editar)
   v_tenant_id    UUID;

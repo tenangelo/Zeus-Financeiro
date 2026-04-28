@@ -15,15 +15,15 @@ export class AdminService {
     const [tenantsRes, profilesRes, subsRes] = await Promise.all([
       this.supabase.from("tenants").select("id, plan_tier, is_active, created_at"),
       this.supabase.from("profiles").select("id, is_active, created_at"),
-      this.supabase.from("subscriptions").select("id, status, amount, billing_interval, current_period_end"),
+      (this.supabase as any).from("subscriptions").select("id, status, amount, billing_interval, current_period_end"),
     ]);
 
     const tenants = tenantsRes.data ?? [];
     const profiles = profilesRes.data ?? [];
     const subs = subsRes.data ?? [];
 
-    const activeSubs = subs.filter(s => s.status === "active");
-    const mrr = activeSubs.reduce((sum, s) => {
+    const activeSubs = subs.filter((s: any) => s.status === "active");
+    const mrr = activeSubs.reduce((sum: number, s: any) => {
       const amt = Number(s.amount) || 0;
       return sum + (s.billing_interval === "yearly" ? amt / 12 : amt);
     }, 0);
@@ -40,8 +40,8 @@ export class AdminService {
       mrr: Number(mrr.toFixed(2)),
       arr: Number((mrr * 12).toFixed(2)),
       active_subscriptions: activeSubs.length,
-      trialing: subs.filter(s => s.status === "trialing").length,
-      past_due: subs.filter(s => s.status === "past_due").length,
+      trialing: subs.filter((s: any) => s.status === "trialing").length,
+      past_due: subs.filter((s: any) => s.status === "past_due").length,
       plan_distribution: tenants.reduce<Record<string, number>>((acc, t) => {
         acc[t.plan_tier] = (acc[t.plan_tier] ?? 0) + 1;
         return acc;
@@ -154,7 +154,7 @@ export class AdminService {
 
   // ─── Subscriptions ────────────────────────────────────────────────────
   async listSubscriptions(page = 1, limit = 20) {
-    const { data, error, count } = await this.supabase
+    const { data, error, count } = await (this.supabase as any)
       .from("subscriptions")
       .select("*, tenants(id, name), plans(id, name, tier)", { count: "exact" })
       .order("created_at", { ascending: false })
@@ -165,12 +165,12 @@ export class AdminService {
   }
 
   async assignPlan(tenantId: string, planId: string, billingInterval: "monthly" | "yearly" = "monthly") {
-    const { data: plan } = await this.supabase.from("plans").select("price_monthly, price_yearly").eq("id", planId).single();
+    const { data: plan } = await (this.supabase as any).from("plans").select("price_monthly, price_yearly").eq("id", planId).single();
     if (!plan) throw new NotFoundException("Plano não encontrado.");
 
     const amount = billingInterval === "yearly" ? plan.price_yearly : plan.price_monthly;
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("subscriptions")
       .upsert({
         tenant_id: tenantId,
@@ -188,7 +188,7 @@ export class AdminService {
     if (error || !data) throw new BadRequestException(`Erro ao atribuir plano: ${error?.message}`);
 
     // Sync plan_tier on tenants
-    await this.supabase.from("tenants").update({ plan_tier: (await this.supabase.from("plans").select("tier").eq("id", planId).single()).data?.tier } as any).eq("id", tenantId);
+    await this.supabase.from("tenants").update({ plan_tier: (await (this.supabase as any).from("plans").select("tier").eq("id", planId).single()).data?.tier } as any).eq("id", tenantId);
 
     return data;
   }

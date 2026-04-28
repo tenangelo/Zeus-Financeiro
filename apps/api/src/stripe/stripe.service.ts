@@ -15,7 +15,7 @@ export class StripeService {
     private readonly supabase: SupabaseClient<Database>,
   ) {
     this.stripe = new Stripe(config.getOrThrow<string>("STRIPE_SECRET_KEY"), {
-      apiVersion: "2025-03-31.basil",
+      apiVersion: "2025-02-24.acacia",
     });
   }
 
@@ -25,11 +25,11 @@ export class StripeService {
 
   // ─── Customer ─────────────────────────────────────────────────────
   async getOrCreateCustomer(tenantId: string, email: string, name: string): Promise<string> {
-    const { data: tenant } = await this.supabase
+    const { data: tenant } = await (this.supabase
       .from("tenants")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id" as any)
       .eq("id", tenantId)
-      .single();
+      .single() as any);
 
     if (tenant?.stripe_customer_id) return tenant.stripe_customer_id;
 
@@ -70,11 +70,11 @@ export class StripeService {
   }
 
   async createBillingPortalSession(tenantId: string, returnUrl: string): Promise<string> {
-    const { data: tenant } = await this.supabase
+    const { data: tenant } = await (this.supabase
       .from("tenants")
-      .select("stripe_customer_id")
+      .select("stripe_customer_id" as any)
       .eq("id", tenantId)
-      .single();
+      .single() as any);
 
     if (!tenant?.stripe_customer_id) throw new Error("Tenant sem customer Stripe.");
 
@@ -97,11 +97,11 @@ export class StripeService {
 
   async handleWebhookEvent(event: Stripe.Event): Promise<void> {
     // Idempotency: log and skip duplicates
-    const { data: existing } = await this.supabase
+    const { data: existing } = await ((this.supabase as any)
       .from("payment_events")
       .select("id, processed")
       .eq("stripe_event_id", event.id)
-      .single();
+      .single());
 
     if (existing?.processed) return;
 
@@ -120,9 +120,9 @@ export class StripeService {
           const sub = event.data.object as Stripe.Subscription;
           tenantId = sub.metadata?.tenant_id ?? null;
           if (tenantId) {
-            await this.supabase
+            await (this.supabase as any)
               .from("subscriptions")
-              .update({ status: "canceled", canceled_at: new Date().toISOString(), updated_at: new Date().toISOString() } as any)
+              .update({ status: "canceled", canceled_at: new Date().toISOString(), updated_at: new Date().toISOString() })
               .eq("tenant_id", tenantId);
             await this.supabase.from("tenants").update({ plan_tier: "trial" } as any).eq("id", tenantId);
           }
@@ -132,10 +132,10 @@ export class StripeService {
           const invoice = event.data.object as Stripe.Invoice;
           const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
           if (customerId) {
-            const { data: tenant } = await this.supabase.from("tenants").select("id").eq("stripe_customer_id", customerId).single();
+            const { data: tenant } = await (this.supabase as any).from("tenants").select("id").eq("stripe_customer_id", customerId).single();
             if (tenant) {
               tenantId = tenant.id;
-              await this.supabase.from("subscriptions").update({ status: "past_due", updated_at: new Date().toISOString() } as any).eq("tenant_id", tenant.id);
+              await (this.supabase as any).from("subscriptions").update({ status: "past_due", updated_at: new Date().toISOString() }).eq("tenant_id", tenant.id);
             }
           }
           break;
@@ -144,17 +144,17 @@ export class StripeService {
           const invoice = event.data.object as Stripe.Invoice;
           const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
           if (customerId) {
-            const { data: tenant } = await this.supabase.from("tenants").select("id").eq("stripe_customer_id", customerId).single();
+            const { data: tenant } = await (this.supabase as any).from("tenants").select("id").eq("stripe_customer_id", customerId).single();
             if (tenant) {
               tenantId = tenant.id;
-              await this.supabase.from("subscriptions").update({ status: "active", updated_at: new Date().toISOString() } as any).eq("tenant_id", tenant.id);
+              await (this.supabase as any).from("subscriptions").update({ status: "active", updated_at: new Date().toISOString() }).eq("tenant_id", tenant.id);
             }
           }
           break;
         }
       }
 
-      await this.supabase.from("payment_events").upsert({
+      await (this.supabase.from("payment_events" as any) as any).upsert({
         stripe_event_id: event.id,
         event_type: event.type,
         payload: event as any,
@@ -164,7 +164,7 @@ export class StripeService {
       }, { onConflict: "stripe_event_id" });
 
     } catch (err: any) {
-      await this.supabase.from("payment_events").upsert({
+      await (this.supabase.from("payment_events" as any) as any).upsert({
         stripe_event_id: event.id,
         event_type: event.type,
         payload: event as any,
@@ -180,16 +180,13 @@ export class StripeService {
     const priceId = stripeSub.items.data[0]?.price?.id;
     if (!priceId) return;
 
-    const { data: plan } = await this.supabase
-      .from("plans")
-      .select("id, tier")
-      .or(`stripe_price_id_monthly.eq.${priceId},stripe_price_id_yearly.eq.${priceId}`)
-      .single();
+    const result: any = await (this.supabase as any).from("plans").select("id, tier").or(`stripe_price_id_monthly.eq.${priceId},stripe_price_id_yearly.eq.${priceId}`).single();
+    const plan = result?.data;
 
     const interval = stripeSub.items.data[0]?.price?.recurring?.interval === "year" ? "yearly" : "monthly";
     const amount = (stripeSub.items.data[0]?.price?.unit_amount ?? 0) / 100;
 
-    await this.supabase.from("subscriptions").upsert({
+    await (this.supabase as any).from("subscriptions").upsert({
       tenant_id: tenantId,
       plan_id: plan?.id ?? null,
       stripe_subscription_id: stripeSub.id,
@@ -204,7 +201,7 @@ export class StripeService {
     }, { onConflict: "tenant_id" });
 
     if (plan?.tier) {
-      await this.supabase.from("tenants").update({ plan_tier: plan.tier, stripe_subscription_id: stripeSub.id } as any).eq("id", tenantId);
+      await (this.supabase as any).from("tenants").update({ plan_tier: plan.tier, stripe_subscription_id: stripeSub.id }).eq("id", tenantId);
     }
   }
 }

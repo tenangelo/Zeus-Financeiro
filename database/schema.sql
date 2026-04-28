@@ -78,6 +78,21 @@ CREATE TYPE import_source_enum AS ENUM (
 );
 
 
+CREATE TYPE subscription_status_enum AS ENUM (
+  'trialing',
+  'active',
+  'past_due',
+  'canceled',
+  'unpaid',
+  'paused'
+);
+
+CREATE TYPE billing_interval_enum AS ENUM (
+  'monthly',
+  'yearly'
+);
+
+
 -- =============================================================================
 -- SEÇÃO 2: TABELAS
 -- =============================================================================
@@ -97,6 +112,8 @@ CREATE TABLE tenants (
   settings            jsonb       NOT NULL DEFAULT '{}',
   -- settings keys esperadas: cmv_alert_threshold_pct, waste_alert_threshold_pct,
   --                          notification_hour, timezone, currency
+  stripe_customer_id  text,
+  stripe_subscription_id text,
   trial_ends_at       timestamptz,
   created_at          timestamptz NOT NULL DEFAULT now(),
   updated_at          timestamptz NOT NULL DEFAULT now()
@@ -119,6 +136,7 @@ CREATE TABLE profiles (
   whatsapp_number text        CHECK (whatsapp_number ~ '^\+[1-9]\d{7,14}$'),
   avatar_url      text,
   is_active       boolean     NOT NULL DEFAULT true,
+  is_super_admin  boolean     NOT NULL DEFAULT false,
   last_login_at   timestamptz,
   created_at      timestamptz NOT NULL DEFAULT now(),
   updated_at      timestamptz NOT NULL DEFAULT now()
@@ -317,6 +335,18 @@ CREATE TABLE stock_movements_2026_11 PARTITION OF stock_movements
   FOR VALUES FROM ('2026-11-01') TO ('2026-12-01');
 CREATE TABLE stock_movements_2026_12 PARTITION OF stock_movements
   FOR VALUES FROM ('2026-12-01') TO ('2027-01-01');
+CREATE TABLE stock_movements_2027_01 PARTITION OF stock_movements FOR VALUES FROM ('2027-01-01') TO ('2027-02-01');
+CREATE TABLE stock_movements_2027_02 PARTITION OF stock_movements FOR VALUES FROM ('2027-02-01') TO ('2027-03-01');
+CREATE TABLE stock_movements_2027_03 PARTITION OF stock_movements FOR VALUES FROM ('2027-03-01') TO ('2027-04-01');
+CREATE TABLE stock_movements_2027_04 PARTITION OF stock_movements FOR VALUES FROM ('2027-04-01') TO ('2027-05-01');
+CREATE TABLE stock_movements_2027_05 PARTITION OF stock_movements FOR VALUES FROM ('2027-05-01') TO ('2027-06-01');
+CREATE TABLE stock_movements_2027_06 PARTITION OF stock_movements FOR VALUES FROM ('2027-06-01') TO ('2027-07-01');
+CREATE TABLE stock_movements_2027_07 PARTITION OF stock_movements FOR VALUES FROM ('2027-07-01') TO ('2027-08-01');
+CREATE TABLE stock_movements_2027_08 PARTITION OF stock_movements FOR VALUES FROM ('2027-08-01') TO ('2027-09-01');
+CREATE TABLE stock_movements_2027_09 PARTITION OF stock_movements FOR VALUES FROM ('2027-09-01') TO ('2027-10-01');
+CREATE TABLE stock_movements_2027_10 PARTITION OF stock_movements FOR VALUES FROM ('2027-10-01') TO ('2027-11-01');
+CREATE TABLE stock_movements_2027_11 PARTITION OF stock_movements FOR VALUES FROM ('2027-11-01') TO ('2027-12-01');
+CREATE TABLE stock_movements_2027_12 PARTITION OF stock_movements FOR VALUES FROM ('2027-12-01') TO ('2028-01-01');
 
 COMMENT ON TABLE stock_movements IS 'Ledger imutável de movimentações de estoque. Particionado mensalmente.';
 
@@ -373,6 +403,18 @@ CREATE TABLE transactions_2026_09 PARTITION OF transactions FOR VALUES FROM ('20
 CREATE TABLE transactions_2026_10 PARTITION OF transactions FOR VALUES FROM ('2026-10-01') TO ('2026-11-01');
 CREATE TABLE transactions_2026_11 PARTITION OF transactions FOR VALUES FROM ('2026-11-01') TO ('2026-12-01');
 CREATE TABLE transactions_2026_12 PARTITION OF transactions FOR VALUES FROM ('2026-12-01') TO ('2027-01-01');
+CREATE TABLE transactions_2027_01 PARTITION OF transactions FOR VALUES FROM ('2027-01-01') TO ('2027-02-01');
+CREATE TABLE transactions_2027_02 PARTITION OF transactions FOR VALUES FROM ('2027-02-01') TO ('2027-03-01');
+CREATE TABLE transactions_2027_03 PARTITION OF transactions FOR VALUES FROM ('2027-03-01') TO ('2027-04-01');
+CREATE TABLE transactions_2027_04 PARTITION OF transactions FOR VALUES FROM ('2027-04-01') TO ('2027-05-01');
+CREATE TABLE transactions_2027_05 PARTITION OF transactions FOR VALUES FROM ('2027-05-01') TO ('2027-06-01');
+CREATE TABLE transactions_2027_06 PARTITION OF transactions FOR VALUES FROM ('2027-06-01') TO ('2027-07-01');
+CREATE TABLE transactions_2027_07 PARTITION OF transactions FOR VALUES FROM ('2027-07-01') TO ('2027-08-01');
+CREATE TABLE transactions_2027_08 PARTITION OF transactions FOR VALUES FROM ('2027-08-01') TO ('2027-09-01');
+CREATE TABLE transactions_2027_09 PARTITION OF transactions FOR VALUES FROM ('2027-09-01') TO ('2027-10-01');
+CREATE TABLE transactions_2027_10 PARTITION OF transactions FOR VALUES FROM ('2027-10-01') TO ('2027-11-01');
+CREATE TABLE transactions_2027_11 PARTITION OF transactions FOR VALUES FROM ('2027-11-01') TO ('2027-12-01');
+CREATE TABLE transactions_2027_12 PARTITION OF transactions FOR VALUES FROM ('2027-12-01') TO ('2028-01-01');
 
 COMMENT ON TABLE transactions IS 'Lançamentos financeiros (receitas e despesas). Particionado por transaction_date.';
 
@@ -472,6 +514,76 @@ CREATE TABLE import_jobs (
 
 COMMENT ON TABLE import_jobs IS 'Rastreia importações de dados externos (CSV, Excel, XML) com log de erros por linha.';
 
+
+-- -----------------------------------------------------------------------------
+-- 2.14 PLANS (Planos do SaaS)
+-- -----------------------------------------------------------------------------
+CREATE TABLE plans (
+  id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name                    text NOT NULL CHECK (char_length(name) BETWEEN 2 AND 100),
+  slug                    text NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9\-]+$'),
+  tier                    plan_tier_enum NOT NULL,
+  description             text,
+  price_monthly           numeric(10,2) NOT NULL DEFAULT 0,
+  price_yearly            numeric(10,2) NOT NULL DEFAULT 0,
+  stripe_product_id       text,
+  stripe_price_id_monthly text,
+  stripe_price_id_yearly  text,
+  features                jsonb NOT NULL DEFAULT '[]',
+  limits                  jsonb NOT NULL DEFAULT '{}',
+  is_active               boolean NOT NULL DEFAULT true,
+  is_highlighted          boolean NOT NULL DEFAULT false,
+  sort_order              smallint NOT NULL DEFAULT 0,
+  created_at              timestamptz NOT NULL DEFAULT now(),
+  updated_at              timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE plans IS 'Planos disponíveis no SaaS. Gerenciados pelo super-admin.';
+
+-- -----------------------------------------------------------------------------
+-- 2.15 SUBSCRIPTIONS (Assinaturas dos Tenants)
+-- -----------------------------------------------------------------------------
+CREATE TABLE subscriptions (
+  id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id               uuid NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+  plan_id                 uuid NOT NULL REFERENCES plans(id) ON DELETE RESTRICT,
+  stripe_subscription_id  text UNIQUE,
+  stripe_customer_id      text,
+  status                  subscription_status_enum NOT NULL DEFAULT 'trialing',
+  billing_interval        billing_interval_enum NOT NULL DEFAULT 'monthly',
+  current_period_start    timestamptz,
+  current_period_end      timestamptz,
+  trial_start             timestamptz,
+  trial_end               timestamptz,
+  canceled_at             timestamptz,
+  cancel_at_period_end    boolean NOT NULL DEFAULT false,
+  amount                  numeric(10,2) NOT NULL DEFAULT 0,
+  currency                char(3) NOT NULL DEFAULT 'BRL',
+  metadata                jsonb NOT NULL DEFAULT '{}',
+  created_at              timestamptz NOT NULL DEFAULT now(),
+  updated_at              timestamptz NOT NULL DEFAULT now(),
+
+  CONSTRAINT subscriptions_one_active_per_tenant UNIQUE (tenant_id)
+);
+
+COMMENT ON TABLE subscriptions IS 'Assinaturas dos tenants. Uma assinatura ativa por tenant.';
+
+-- -----------------------------------------------------------------------------
+-- 2.16 PAYMENT_EVENTS (Log de eventos de pagamento do Stripe)
+-- -----------------------------------------------------------------------------
+CREATE TABLE payment_events (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id       uuid REFERENCES tenants(id) ON DELETE SET NULL,
+  stripe_event_id text NOT NULL UNIQUE,
+  event_type      text NOT NULL,
+  payload         jsonb NOT NULL DEFAULT '{}',
+  processed       boolean NOT NULL DEFAULT false,
+  processed_at    timestamptz,
+  error_message   text,
+  created_at      timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE payment_events IS 'Log idempotente de webhooks do Stripe.';
 
 -- =============================================================================
 -- SEÇÃO 3: ÍNDICES

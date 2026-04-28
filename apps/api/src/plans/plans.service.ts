@@ -31,7 +31,7 @@ export class PlansService {
   ) {}
 
   async findAll(includeInactive = false) {
-    let query = this.supabase
+    let query = (this.supabase as any)
       .from("plans")
       .select("*")
       .order("sort_order");
@@ -44,7 +44,7 @@ export class PlansService {
   }
 
   async findOne(id: string) {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("plans")
       .select("*")
       .eq("id", id)
@@ -55,10 +55,10 @@ export class PlansService {
   }
 
   async create(dto: CreatePlanDto) {
-    const { data: existing } = await this.supabase.from("plans").select("id").eq("slug", dto.slug).single();
+    const { data: existing } = await (this.supabase as any).from("plans").select("id").eq("slug", dto.slug).single();
     if (existing) throw new ConflictException(`Slug "${dto.slug}" já existe.`);
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("plans")
       .insert({
         name: dto.name,
@@ -80,7 +80,7 @@ export class PlansService {
   }
 
   async update(id: string, dto: UpdatePlanDto) {
-    const { data, error } = await this.supabase
+    const { data, error } = await (this.supabase as any)
       .from("plans")
       .update(dto as any)
       .eq("id", id)
@@ -92,7 +92,7 @@ export class PlansService {
   }
 
   async remove(id: string) {
-    const { count } = await this.supabase
+    const { count } = await (this.supabase as any)
       .from("subscriptions")
       .select("id", { count: "exact", head: true })
       .eq("plan_id", id)
@@ -102,7 +102,7 @@ export class PlansService {
       throw new ConflictException("Não é possível excluir um plano com assinaturas ativas.");
     }
 
-    const { error } = await this.supabase.from("plans").delete().eq("id", id);
+    const { error } = await (this.supabase as any).from("plans").delete().eq("id", id);
     if (error) throw new Error(error.message);
   }
 }

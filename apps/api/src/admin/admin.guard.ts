@@ -18,7 +18,7 @@ export class AdminGuard implements CanActivate {
     const userId = request.user?.sub;
     if (!userId) throw new ForbiddenException("Não autenticado.");
 
-    const { data: profile } = await this.supabase
+    const { data: profile } = await (this.supabase as any)
       .from("profiles")
       .select("is_super_admin, is_active")
       .eq("id", userId)

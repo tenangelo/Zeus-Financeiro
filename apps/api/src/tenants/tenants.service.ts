@@ -5,6 +5,7 @@ import type { Database } from "@zeus/database";
 import { UpdateTenantDto } from "./dto/update-tenant.dto";
 
 type Tenant = Database["public"]["Tables"]["tenants"]["Row"];
+type TenantUpdate = Database["public"]["Tables"]["tenants"]["Update"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 @Injectable()
@@ -40,10 +41,10 @@ export class TenantsService {
       throw new ForbiddenException("Apenas owner ou manager podem editar o tenant.");
     }
 
-    const payload: Partial<Tenant> = {};
+    const payload: TenantUpdate = {};
     if (dto.name !== undefined) payload.name = dto.name;
     if (dto.whatsapp_number !== undefined) payload.whatsapp_number = dto.whatsapp_number;
-    if (dto.settings !== undefined) payload.settings = dto.settings as Tenant["settings"];
+    if (dto.settings !== undefined) payload.settings = dto.settings as TenantUpdate["settings"];
 
     const { data, error } = await this.supabase
       .from("tenants")
@@ -82,6 +83,9 @@ export class TenantsService {
 
     if (existing) throw new ForbiddenException("Usuário já possui um tenant vinculado.");
 
+    const trialEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    const now = new Date().toISOString();
+
     const { data: tenant, error: tenantErr } = await this.adminSupabase
       .from("tenants")
       .insert({
@@ -97,7 +101,7 @@ export class TenantsService {
           timezone: "America/Sao_Paulo",
           currency: "BRL",
         },
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        trial_ends_at: trialEnd,
       })
       .select()
       .single();
@@ -119,6 +123,25 @@ export class TenantsService {
     if (profileErr || !profile) {
       await this.adminSupabase.from("tenants").delete().eq("id", tenant.id);
       throw new Error(`Erro ao criar profile: ${profileErr?.message}`);
+    }
+
+    // Assign Trial Plan if exists
+    const { data: plan } = await this.adminSupabase
+      .from("plans")
+      .select("id")
+      .ilike("name", "%Trial%")
+      .single();
+
+    if (plan) {
+      await this.adminSupabase.from("subscriptions").insert({
+        tenant_id: tenant.id,
+        plan_id: plan.id,
+        status: "trialing",
+        current_period_start: now,
+        current_period_end: trialEnd,
+        trial_start: now,
+        trial_end: trialEnd,
+      });
     }
 
     return { tenant, profile };

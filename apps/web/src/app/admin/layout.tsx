@@ -5,37 +5,66 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   LayoutDashboard, Building2, Users, CreditCard, Package,
-  LogOut, Zap, ChevronRight, Settings, BarChart3, Bell,
+  LogOut, Zap, ChevronRight, Settings, BarChart3, Shield,
 } from "lucide-react";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { api } from "@/lib/api";
 
 const NAV = [
-  { href: "/admin",              label: "Dashboard",     icon: LayoutDashboard },
-  { href: "/admin/tenants",      label: "Restaurantes",  icon: Building2 },
-  { href: "/admin/users",        label: "Usuários",      icon: Users },
-  { href: "/admin/plans",        label: "Planos",        icon: Package },
-  { href: "/admin/subscriptions",label: "Assinaturas",   icon: CreditCard },
-  { href: "/admin/settings",     label: "Configurações", icon: Settings },
+  { href: "/admin",               label: "Dashboard",     icon: LayoutDashboard },
+  { href: "/admin/tenants",       label: "Restaurantes",  icon: Building2 },
+  { href: "/admin/users",         label: "Usuários",      icon: Users },
+  { href: "/admin/plans",         label: "Planos",        icon: Package },
+  { href: "/admin/subscriptions", label: "Assinaturas",   icon: CreditCard },
+  { href: "/admin/settings",      label: "Configurações", icon: Settings },
 ];
+
+interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [checking, setChecking] = useState(true);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+
+  // Admin login page: no guard, no sidebar — render directly inside the slate bg
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
 
   useEffect(() => {
-    api.get<{ is_super_admin: boolean }>("/admin/metrics")
-      .then(() => setChecking(false))
-      .catch(() => {
-        router.replace("/dashboard");
-      });
+    async function check() {
+      try {
+        // Identify the logged-in user for display in the sidebar
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setAdminUser({
+            id: user.id,
+            email: user.email ?? "",
+            name: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Admin",
+          });
+        }
+        // Guard: only super-admins can reach this layout
+        await api.get<{ is_super_admin: boolean }>("/admin/metrics");
+        setChecking(false);
+      } catch {
+        toast.error("Acesso restrito a super-admins.");
+        window.location.href = "/admin/login";
+      }
+    }
+    check();
   }, []);
 
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/login");
+    window.location.href = "/admin/login";
   }
 
   if (checking) {
@@ -43,7 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="flex items-center gap-3 text-white">
           <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-          <span className="text-sm">Verificando acesso...</span>
+          <span className="text-sm text-slate-400">Verificando acesso...</span>
         </div>
       </div>
     );
@@ -56,15 +85,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Logo */}
         <div className="px-5 py-5 border-b border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600 shadow-lg shadow-violet-500/30">
               <Zap className="h-4 w-4 text-white" />
             </div>
             <div>
               <p className="text-sm font-bold text-white">Zeus Admin</p>
-              <p className="text-[10px] text-slate-400">Super Admin Panel</p>
+              <p className="text-[10px] text-slate-500">Super Admin Panel</p>
             </div>
           </div>
         </div>
+
+        {/* Logged-in admin identity */}
+        {adminUser && (
+          <div className="px-4 py-3 border-b border-slate-800/60 bg-slate-900/60">
+            <div className="flex items-center gap-2.5">
+              <div className="relative shrink-0">
+                <div className="h-7 w-7 rounded-full bg-violet-500/15 border border-violet-500/20 flex items-center justify-center text-[11px] font-bold text-violet-400">
+                  {adminUser.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-slate-900" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-white truncate">{adminUser.name}</p>
+                <p className="text-[10px] text-slate-500 truncate">{adminUser.email}</p>
+              </div>
+              <Shield className="h-3 w-3 text-violet-400 shrink-0 ml-auto" />
+            </div>
+            <p className="mt-1.5 text-[9px] font-mono text-slate-700 truncate pl-9">
+              {adminUser.id}
+            </p>
+          </div>
+        )}
 
         {/* Nav */}
         <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
@@ -76,7 +127,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 href={href as any}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   active
-                    ? "bg-violet-600 text-white font-medium"
+                    ? "bg-violet-600 text-white font-medium shadow-sm shadow-violet-500/20"
                     : "text-slate-400 hover:text-white hover:bg-slate-800"
                 }`}
               >
@@ -89,7 +140,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </nav>
 
         {/* Footer */}
-        <div className="px-3 py-4 border-t border-slate-800">
+        <div className="px-3 py-4 border-t border-slate-800 space-y-0.5">
           <Link
             href="/dashboard"
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
@@ -99,7 +150,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Link>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-950/30 transition-colors mt-0.5"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-400/80 hover:text-red-300 hover:bg-red-950/30 transition-colors"
           >
             <LogOut className="h-4 w-4" />
             Sair

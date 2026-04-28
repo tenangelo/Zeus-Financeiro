@@ -12,6 +12,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_ROUTES = ["/dashboard", "/ingredients", "/recipes", "/transactions", "/reports", "/admin", "/onboarding"];
 const AUTH_ROUTES = ["/login", "/signup"];
+const ADMIN_AUTH_ROUTES = ["/admin/login"];
 
 export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -54,15 +55,22 @@ export async function middleware(request: NextRequest) {
   const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
   const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r));
 
-  // Redireciona usuário não autenticado tentando acessar rota protegida
-  if (isProtected && !user) {
+  // Authenticated user hitting /admin/login → send directly to admin panel
+  const isAdminAuthRoute = ADMIN_AUTH_ROUTES.some(r => pathname.startsWith(r));
+  if (isAdminAuthRoute && user) {
+    return NextResponse.redirect(new URL("/admin", request.url));
+  }
+
+  // Unauthenticated user trying a protected route (admin/login is public — skip it)
+  if (isProtected && !user && !isAdminAuthRoute) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
+    // Admin routes get a dedicated login page; everything else uses /login
+    redirectUrl.pathname = pathname.startsWith("/admin") ? "/admin/login" : "/login";
     redirectUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Redireciona usuário autenticado tentando acessar /login ou /signup
+  // Authenticated user hitting /login or /signup → send to dashboard
   if (isAuthRoute && user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
