@@ -76,6 +76,7 @@ Colocar sistema online com integração completa:
 
 ## 📋 Commits Recentes
 
+- `ea1beb3` - feat: updates for Phase 2, 3, and 4 completion
 - `f1df532` - fix: disable pnpm cache in setup-node action to avoid conflicts
 - `dfc7efd` - fix: simplify railway.json configs
 - `3c5429c` - chore: remove pnpm-lock.yaml
