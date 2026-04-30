@@ -14,3 +14,13 @@ build/
 .pnpm-debug.log*
 pnpm-debug.log*
 .turbo
+
+# Skills/plugins clonados localmente (externos ao projeto).
+# Como ativar: ver CLAUDE.md §11
+claude-mem/
+superpowers/
+ui-ux-pro-max-skill/
+
+# Auxiliares
+.claude/scheduled_tasks.lock
+packages/database/src/types/*.new
