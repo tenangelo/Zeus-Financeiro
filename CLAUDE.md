@@ -219,35 +219,38 @@ curl https://zeus-financeiro-web.vercel.app/admin/login \
 
 ---
 
-## 11. Skills externos clonados (não ativos por padrão)
+## 11. Plugins do Claude Code instalados
 
-Três repos foram clonados na **raiz do projeto** como referência (estão no `.gitignore`, não são versionados):
+Três plugins externos estão clonados na raiz (no `.gitignore`) e **registrados como plugins ativos** do Claude Code via marketplaces locais:
 
-| Pasta | Repo | O que oferece |
-|---|---|---|
-| `claude-mem/` | [thedotmack/claude-mem](https://github.com/thedotmack/claude-mem) | Memória persistente entre sessões via hooks + worker service (port 37777) + SQLite + vector search |
-| `superpowers/` | (private) | Metodologia de dev com comandos `/brainstorm`, `/write-plan`, `/execute-plan` e agente `code-reviewer` |
-| `ui-ux-pro-max-skill/` | [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) | 67 UI styles, 161 color palettes, 57 font pairings, 99 UX guidelines, 25 chart types |
+| Plugin | Marketplace | Versão | O que oferece |
+|---|---|---|---|
+| `superpowers` | `superpowers-dev` ([obra/superpowers](https://github.com/obra/superpowers)) | 5.0.7 | Skills de TDD, debug, colaboração; comandos `/brainstorm`, `/write-plan`, `/execute-plan`; agente `code-reviewer` |
+| `ui-ux-pro-max` | `ui-ux-pro-max-skill` ([nextlevelbuilder](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)) | 2.5.0 | 67 UI styles, 161 paletas, 57 pares de fonte, 99 guidelines UX, 25 charts — invocar quando o pedido envolver design, layout ou refinamento visual |
+| `claude-mem` | `thedotmack` ([thedotmack/claude-mem](https://github.com/thedotmack/claude-mem)) | 12.4.9 | Memória persistente entre sessões via hooks + worker service (port 37777) + SQLite + busca semântica. DB em `~/.claude-mem/` |
 
-### Como ativar
-
-Para o Claude Code reconhecer e expor essas skills/comandos:
+### Comandos úteis
 
 ```bash
-# Opção 1 — instalar como plugin (claude-mem oferece installer próprio)
-cd claude-mem && npm install && npm run install-plugin
-
-# Opção 2 — copiar arquivos para ~/.claude/skills (skills simples)
-cp -r superpowers/commands/* ~/.claude/commands/
-cp -r superpowers/agents/* ~/.claude/agents/
-cp -r ui-ux-pro-max-skill ~/.claude/skills/
-
-# Após qualquer instalação, reinicie a sessão do Claude Code
+claude plugin list                              # ver instalados
+claude plugin marketplace list                  # ver marketplaces
+claude plugin disable <nome>@<marketplace>      # desabilitar
+claude plugin enable <nome>@<marketplace>       # reabilitar
+claude plugin update <nome>                     # atualizar
 ```
 
-> **Antes de instalar**, leia o README e `CLAUDE.md` de cada repo. `claude-mem` em particular roda um worker em background e cria DB em `~/.claude-mem/`.
+### Detalhes operacionais
 
-Quando você quiser que a IA use uma skill específica nesta sessão *sem* instalá-la, peça: "leia `<pasta>/SKILL.md` e siga as orientações" — a IA vai consumir o conteúdo via `Read`.
+- **As tools/comandos só aparecem após reiniciar a sessão** do Claude Code. Plugin instalado + sessão antiga = tools ainda invisíveis. Sempre que instalar/atualizar, fechar e reabrir a sessão.
+- **Não mexer/mover** as pastas `claude-mem/`, `superpowers/`, `ui-ux-pro-max-skill/` da raiz — os marketplaces apontam para esses caminhos absolutos. Se mover, rodar `claude plugin marketplace remove <nome>` e re-adicionar do novo path.
+- **claude-mem** cria worker em background no port 37777 quando hooks rodam. Logs em `~/.claude-mem/logs/`. Comandos: `npm run worker:status`, `worker:logs` dentro de `claude-mem/`.
+
+### Como usar nesta sessão
+
+- **Comandos slash** (após restart): `/brainstorm`, `/write-plan`, `/execute-plan` (superpowers)
+- **Skill ui-ux-pro-max**: invocada automaticamente quando o pedido descrever trabalho de UI/UX/design
+- **Memória (claude-mem)**: hooks injetam contexto relevante; busca explícita via skill `mem-search`
+- **Sem reiniciar:** consumir manualmente, ex: "leia `superpowers/commands/brainstorm.md` e siga"
 
 ---
 
