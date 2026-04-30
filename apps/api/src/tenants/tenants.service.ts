@@ -126,14 +126,16 @@ export class TenantsService {
     }
 
     // Assign Trial Plan if exists
-    const { data: plan } = await this.adminSupabase
+    // Note: cast to any while @zeus/database types are regenerated to include
+    // the plans/subscriptions tables added in migration 20260427000000.
+    const { data: plan } = await (this.adminSupabase as any)
       .from("plans")
       .select("id")
       .ilike("name", "%Trial%")
       .single();
 
     if (plan) {
-      await this.adminSupabase.from("subscriptions").insert({
+      await (this.adminSupabase as any).from("subscriptions").insert({
         tenant_id: tenant.id,
         plan_id: plan.id,
         status: "trialing",
