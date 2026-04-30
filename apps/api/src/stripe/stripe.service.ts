@@ -7,16 +7,26 @@ import type { Database } from "@zeus/database";
 
 @Injectable()
 export class StripeService {
-  private stripe: Stripe;
+  private _stripe: Stripe | null = null;
 
   constructor(
     private readonly config: ConfigService,
     @Inject(ADMIN_SUPABASE_CLIENT)
     private readonly supabase: SupabaseClient<Database>,
   ) {
-    this.stripe = new Stripe(config.getOrThrow<string>("STRIPE_SECRET_KEY"), {
-      apiVersion: "2025-02-24.acacia",
-    });
+    // Lazy-init: don't crash the app if STRIPE_SECRET_KEY is missing.
+    // This module will be replaced by AsaasModule; until then we boot
+    // without a gateway configured.
+  }
+
+  private get stripe(): Stripe {
+    if (this._stripe) return this._stripe;
+    const key = this.config.get<string>("STRIPE_SECRET_KEY");
+    if (!key) {
+      throw new Error("Gateway de pagamento não configurado (STRIPE_SECRET_KEY ausente).");
+    }
+    this._stripe = new Stripe(key, { apiVersion: "2025-02-24.acacia" });
+    return this._stripe;
   }
 
   get client(): Stripe {
